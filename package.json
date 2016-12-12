@@ -8,5 +8,13 @@
     "type": "git"
   },
   "author": "tjvr",
-  "license": "BSD-3-Clause"
+  "license": "BSD-3-Clause",
+  "dependencies": {
+    "glob": "^7.1.1",
+    "json-diff": "^0.3.1",
+    "node-zip": "^1.1.1"
+  },
+  "scripts": {
+    "test": "node test/cmp.js"
+  }
 }
