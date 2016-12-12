@@ -6,7 +6,6 @@ const { colorize } = require('json-diff/lib/colorize')
 const scriptsDiff = require('./scripts')
 
 
-
 function costumeInfo(sprite) {
   if (!sprite.costumes) return []
   let costumes = sprite.costumes.map(costume => {
@@ -54,22 +53,6 @@ function simplifyObj(diff) {
   return diff
 }
 
-function simplifyArray(diff) {
-  var allEqual = true
-  let out = diff.map(item => {
-    if (item === undefined) {
-      return [' ']
-    } else {
-      allEqual = false
-      return ['~', item]
-    }
-  })
-  if (allEqual) {
-    return undefined
-  }
-  return out
-}
-
 function getSprites(project) {
   // filter watchers
   let sprites = project.children.filter(obj => {
@@ -89,40 +72,53 @@ function spriteListDiff(sprites1, sprites2) {
   // fortunately Scratch 2.0 doesn't allow rearranging the library,
   // so this is unlikely to happen in practice!
 
-  let names1 = sprites1.map(s => s.objName)
-  let names2 = sprites2.map(s => s.objName)
+  let byName2 = new Map()
+  sprites2.forEach(s => byName2.set(s.objName, s))
+  let unused = new Set(sprites2)
+
+  let pairs = []
+  sprites1.forEach(s1 => {
+    let s2 = byName2.get(s1.objName)
+    if (s2) {
+      unused.delete(s2)
+      pairs.push({ s1, s2 })
+    } else {
+      pairs.push({ s1, s2: null })
+    }
+  })
+  unused.forEach(s2 => {
+    pairs.splice(s2.indexInLibrary, 0, { s1: null, s2 })
+  })
+
+  return pairs.map(pair => {
+    let { s1, s2 } = pair
+    let name = s1 ? s1.objName : s2.objName
+    if (!s1) {
+      return ['-', { name }]
+    }
+    if (!s2) {
+      return ['+', { name }]
+    }
+
+    let diff = spriteDiff(s1, s2)
+    if (diff === undefined) {
+     return [' ']
+    } else {
+     return ['~', diff]
+    }
+  })
 
   var result = jsonDiff(names1, names2)
   if (result === undefined) {
     result = names1.map(_ => [' '])
   }
-
-  var i = 0
-  var j = 0
-  return result.map(item => {
-    let op = item[0]
-    switch (op) {
-      case '~':
-      case ' ':
-        let diff = spriteDiff(sprites1[i], sprites2[i])
-        let out = diff === undefined ? [' '] : ['~', diff]
-        i++
-        j++
-        return out
-      case '+':
-        i++
-        return ['+', { name: item[1] }]
-      case '-':
-        j++
-        return ['-', { name: item[1] }]
-    }
-  })
 }
 
 function projectDiff(project1, project2) {
   let sprites = spriteListDiff(getSprites(project1), getSprites(project2))
-  let stage = spriteDiff(project1, project2)
-  return simplifyArray([stage].concat(sprites))
+  var stage = spriteDiff(project1, project2)
+  stage = stage === undefined ? [' '] : ['~', stage]
+  return [stage].concat(sprites)
 }
 
 /*
