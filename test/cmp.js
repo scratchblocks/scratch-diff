@@ -1,9 +1,7 @@
 
 const glob = require('glob') 
 
-const { diff } = require('json-diff')
-const { colorize } = require('json-diff/lib/colorize')
-
+const { projectDiff, colorize } = require('../diff')
 const sb2 = require('../sb2')
 
 
@@ -29,11 +27,8 @@ glob('corpus/*.kurt.sb2', function(err, files) {
     var kurt = sb2.Project.load(path).project
     var scratch = sb2.Project.load(path.replace('.kurt.', '.')).project
 
-    cleanup(kurt)
-    cleanup(scratch)
-
-    let d = diff(kurt, scratch)
-    process.stdout.write(colorize(d))
+    let result = projectDiff(kurt, scratch)
+    process.stdout.write(colorize(result))
 
   })
 })
