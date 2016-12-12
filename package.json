@@ -1,0 +1,12 @@
+{
+  "name": "scratch-diff",
+  "version": "0.1",
+  "description": "A sensible diff for Scratch sb2 files",
+  "main": "diff.js",
+  "repository": {
+    "url": "https://github.com/tjvr/scratch-diff",
+    "type": "git"
+  },
+  "author": "tjvr",
+  "license": "BSD-3-Clause"
+}
