@@ -6,17 +6,36 @@ const { colorize } = require('json-diff/lib/colorize')
 const scriptsDiff = require('./scripts')
 
 
+function arrayDiff(seq1, seq2) {
+  // json-diff can't cope with duplicate objects
+  seq1.forEach((obj, index) => { obj._index = index })
+  seq2.forEach((obj, index) => { obj._index = index })
+
+  let diff = jsonDiff(seq1, seq2)
+  if (diff === undefined) {
+    return
+  }
+
+  return diff.map(item => {
+    if (item[0] === '~') {
+      delete item[1]._index
+    }
+    return item
+  })
+}
+
 function costumeInfo(sprite) {
   if (!sprite.costumes) return []
   let costumes = sprite.costumes.map(costume => {
     return {
       name: costume.costumeName,
-      md5: costume.baseLayerMD5, // TODO what about sb2 projects??
+      md5: costume.baseLayerMD5,
       rotationCenterX: costume.rotationCenterX,
       rotationCenterY: costume.rotationCenterY,
+      //isCurrent: false,
     }
   })
-  costumes[sprite.currentCostumeIndex].isCurrent = true
+  //costumes[sprite.currentCostumeIndex].isCurrent = true
   return costumes
 }
 
@@ -25,7 +44,7 @@ function soundInfo(sprite) {
   return sprite.sounds.map(sound => {
     return {
       name: sound.soundName,
-      md5: sound.md5, // TODO what about sb2 projects??
+      md5: sound.md5,
     }
   })
 }
@@ -33,8 +52,8 @@ function soundInfo(sprite) {
 function spriteDiff(sprite1, sprite2) {
   return simplifyObj({
     name: jsonDiff(sprite1.objName, sprite2.objName),
-    costumes: jsonDiff(costumeInfo(sprite1), costumeInfo(sprite2)),
-    sounds: jsonDiff(soundInfo(sprite1), soundInfo(sprite2)),
+    costumes: arrayDiff(costumeInfo(sprite1), costumeInfo(sprite2)),
+    sounds: arrayDiff(soundInfo(sprite1), soundInfo(sprite2)),
     scripts: scriptsDiff(sprite1.scripts || [], sprite2.scripts || []),
     // TODO variables
     // TODO lists
