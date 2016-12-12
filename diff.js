@@ -83,20 +83,44 @@ function getSprites(project) {
   return sprites
 }
 
+function spriteListDiff(sprites1, sprites2) {
+  // nb. if you rename sprites *and* somehow reorder the library,
+  // diff will get very confused.
+  // fortunately Scratch 2.0 doesn't allow rearranging the library,
+  // so this is unlikely to happen in practice!
+
+  let names1 = sprites1.map(s => s.objName)
+  let names2 = sprites2.map(s => s.objName)
+
+  var result = jsonDiff(names1, names2)
+  if (result === undefined) {
+    result = names1.map(_ => [' '])
+  }
+
+  var i = 0
+  var j = 0
+  return result.map(item => {
+    let op = item[0]
+    switch (op) {
+      case '~':
+      case ' ':
+        let diff = spriteDiff(sprites1[i], sprites2[i])
+        let out = diff === undefined ? [' '] : ['~', diff]
+        i++
+        j++
+        return out
+      case '+':
+        i++
+        return ['+', { name: item[1] }]
+      case '-':
+        j++
+        return ['-', { name: item[1] }]
+    }
+  })
+}
 
 function projectDiff(project1, project2) {
-  let sprites1 = getSprites(project1)
-  let sprites2 = getSprites(project2)
-  if (sprites1.length !== sprites2.length) {
-    throw 'oops'
-  }
-  // TODO allow for sprite add/delete/rename
-
-  var sprites = []
-  for (var i=0; i<sprites1.length; i++) {
-    sprites.push(spriteDiff(sprites1[i], sprites2[i]))
-  }
-
+  let sprites = spriteListDiff(getSprites(project1), getSprites(project2))
   let stage = spriteDiff(project1, project2)
   return simplifyArray([stage].concat(sprites))
 }
