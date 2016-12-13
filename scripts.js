@@ -36,13 +36,6 @@ function replace(obj1, obj2) {
   return { __old: obj1, __new: obj2 }
 }
 
-function add(item, seq) {
-  return {
-    score: seq.score + 1,
-    diff: [['+', item]].concat(seq.diff),
-  }
-}
-
 function addAll(items) {
   return {
     score: items.length,
@@ -50,24 +43,10 @@ function addAll(items) {
   }
 }
 
-function remove(item, seq) {
-  return {
-    score: seq.score + 1,
-    diff: [['-', item]].concat(seq.diff),
-  }
-}
-
 function removeAll(items) {
   return {
     score: items.length,
     diff: items.map(item => ['-', item]),
-  }
-}
-
-function prepend(item, seq) {
-  return {
-    score: seq.score + (item === undefined ? 0 : 1),
-    diff: [item === undefined ? [' '] : ['~', item]].concat(seq.diff),
   }
 }
 
@@ -176,30 +155,71 @@ function blockDiff(block1, block2) {
   return simplifyObj(diff)
 }
 
-function scriptDiff(script1, script2) {
-  let block1 = script1[0]
-  if (!block1) return addAll(script2)
-  let block2 = script2[0]
-  if (!block2) return removeAll(script1)
+function addBlock(seq1, seq2) {
+  let block2 = seq2[0]
+  let rest = scriptDiff(seq1, seq2.slice(1))
+  rest.score += 1
+  rest.diff.unshift(['+', block2])
+  return rest
+}
 
-  return best([
-    prepend(blockDiff(block1, block2), scriptDiff(script1.slice(1), script2.slice(1))),
-    remove(block1, scriptDiff(script1.slice(1), script2)),
-    add(block2, scriptDiff(script1, script2.slice(1))),
-  ])
+function removeBlock(seq1, seq2) {
+  let block1 = seq1[0]
+  let rest = scriptDiff(seq1.slice(1), seq2)
+  rest.score += 1
+  rest.diff.unshift(['-', block1])
+  return rest
+}
+
+function sameBlock(seq1, seq2) {
+  let first = blockDiff(seq1[0], seq2[0])
+  let rest = scriptDiff(seq1.slice(1), seq2.slice(1))
+  if (first !== undefined) {
+    rest.score += 1
+  }
+  rest.diff.unshift(box(first))
+  return rest
+}
+
+function scriptDiff(seq1, seq2) {
+  if (!seq1.length) return addAll(seq2)
+  if (!seq2.length) return removeAll(seq1)
+
+  let options = [
+    sameBlock(seq1, seq2),
+    removeBlock(seq1, seq2),
+    addBlock(seq1, seq2),
+  ]
 
   /*
-  let scripts = []
-  let scripts1 = sprite1.scripts || []
-  let scripts2 = sprite2.scripts || []
-  let length = Math.min(scripts1.length, scripts2.length)
-  for (var i=0; i<length; i++) {
-    let [x1, y1, blocks1] = scripts1[i]
-    let [x2, y2, blocks2] = scripts2[i]
-    scripts.push(scriptDiff(blocks1, blocks2))
+  let block1 = seq1[0]
+  let block2 = seq2[0]
+  var [_, _, stacks1] = blockInfo(block1)
+  var [_, _, stacks2] = blockInfo(block2)
+
+  if (stacks1.length === 1) {
+    let stack = stacks1[0]
+    let diff = scriptDiff(
+      [stack].concat(seq1.slice(1)),
+      seq2
+    )
+    diff.score += 1
+    options.push(diff)
   }
-  return { scripts }
+  if (stacks2.length === 1) {
+    let stack = stacks2[0]
+    let diff = scriptDiff(
+      seq1,
+      [stack].concat(seq2.slice(1))
+    )
+    diff.score += 1
+    options.push({
+      score: diff.score + 1,
+    })
+  }
   */
+
+  return best(options)
 }
 
 function scriptListDiff(scripts1, scripts2) {
@@ -219,7 +239,7 @@ function scriptListDiff(scripts1, scripts2) {
       }
     }
 
-    //console.log('best', JSON.stringify(best, null, '  '))
+    console.log('best', JSON.stringify(best, null, '  '))
 
     out.push(best.diff ? ['~', best.diff ] : [' '])
     unused.splice(bestIndex, 1)
