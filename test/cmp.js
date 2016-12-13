@@ -18,8 +18,8 @@ function cleanup(project) {
 
 
 
-//glob('corpus/*.kurt.sb2', function(err, files) {
-glob('foo/*.kurt.sb2', function(err, files) {
+glob('corpus/*.kurt.sb2', function(err, files) {
+//glob('foo/*.kurt.sb2', function(err, files) {
   if (err) throw err
 
   files.forEach(path => {

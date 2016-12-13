@@ -9,7 +9,7 @@ function isScript(obj) {
 }
 
 function toJSON(obj) {
-  return obj.toJSON ? obj.toJSON() : obj
+  return obj && obj.toJSON ? obj.toJSON() : obj
 }
 
 
@@ -33,20 +33,25 @@ class Block {
     while (isScript(args[args.length - 1])) {
       stacks.push(Script.fromJSON(args.pop()))
     }
-    if (stacks.length > 2) throw 'bad json'
-    args = args.map(Block.fromJSON)
+    if (stacks.length > 2) {
+      console.error(json)
+      throw 'bad json'
+    }
+    if (args[0] !== 'procDef') {
+      args = args.map(Block.fromJSON)
+    }
     return new Block(args, stacks)
   }
 
   _count() {
     var count = 1
-    for (var i=0; i--; ) {
-      if (args[i].constructor === Block) {
-        count += args[i].count
+    for (var i=this.args.length; i--; ) {
+      if (this.args[i].constructor === Block) {
+        count += this.args[i].count
       }
     }
-    for (var i=0; i--; ) {
-      count += stacks[i].count
+    for (var i=this.stacks.length; i--; ) {
+      count += this.stacks[i].count
     }
     return count
   }
@@ -92,7 +97,7 @@ class Script {
 
   _count() {
     var count = 0
-    for (var i=0; i<this.blocks.length; i++) {
+    for (var i=this.blocks.length; i--; ) {
       count += this.blocks[i].count
     }
     return count
@@ -159,14 +164,14 @@ class Diff {
     }
     for ( ; i < seq1.length; i++) {
       let item = seq1[i]
-      if (item.count) {
+      if (item && item.count) {
         score += item.count
       }
       out.push(['-', toJSON(item)])
     }
     for ( ; i < seq2.length; i++) {
       let item = seq2[i]
-      if (item.count) {
+      if (item && item.count) {
         score += item.count
       }
       out.push(['+', toJSON(item)])
@@ -252,3 +257,4 @@ module.exports = {
   Script,
   Diff,
 }
+

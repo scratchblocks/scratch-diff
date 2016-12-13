@@ -16,6 +16,18 @@ function blockDiff(block1, block2) {
   return d
 }
 
+function scriptEq(script1, script2) {
+  if (script1.length !== script2.length) {
+    return false
+  }
+  for (var i=script1.length; i--; ) {
+    if (blockDiff(script1[i], script2[i]) !== undefined) {
+      return false
+    }
+  }
+  return true
+}
+
 function scriptDiff(script1, script2) {
   if (!script1.length) return Diff.addAll(script2)
   if (!script2.length) return Diff.removeAll(script1)
@@ -25,12 +37,21 @@ function scriptDiff(script1, script2) {
   let head2 = script2[0]
   let tail2 = script2.slice(1)
 
+  // greedy diff
+  let first = blockDiff(head1, head2)
+  if (first.score === 0) {
+    return scriptDiff(tail1, tail2).unshift(first)
+  }
+
+  // TODO enforce an error limit?
+
   return Diff.best([
-    scriptDiff(tail1, tail2).unshift(blockDiff(head1, head2)),
+    scriptDiff(tail1, tail2).unshift(first),
     scriptDiff(script1, tail2).add(head2),
     scriptDiff(tail1, script2).remove(head1),
-    head1.unwrap ? scriptDiff(head1.unwrap.concat(tail1), script2) : null,
-    head2.unwrap ? scriptDiff(script1, head2.unwrap.concat(tail2)) : null,
+    // TODO wrapping
+    // head1.unwrap ? scriptDiff(head1.unwrap.concat(tail1), script2) : null,
+    // head2.unwrap ? scriptDiff(script1, head2.unwrap.concat(tail2)) : null,
   ])
 }
 
@@ -41,35 +62,66 @@ function scriptListDiff(json1, json2) {
 
   let result = []
 
+  // handle shortest scripts first --quickest to diff
+  scripts1.sort((a, b) => {
+    return a.count - b.count
+  })
+
+
+  // pair scripts
   for (var i=0; i<scripts1.length; i++) {
     let script1 = scripts1[i]
     let count = script1.count
 
+    // prioritise by size
     scripts2.sort((a, b) => {
       let ad = Math.abs(a.count - count)
       let bd = Math.abs(b.count - count)
-      return bd - ad
+      return ad - bd
     })
 
     let best = null
     let bestIndex = null
+
+    // look for exact match
+    for (var j=0; j<scripts2.length; j++) {
+      if (scriptEq(scripts2[j], script1)) {
+        best = true
+        bestIndex = j
+        break
+      }
+    }
+    if (best) {
+      result.push([' '])
+      scripts2.splice(bestIndex, 1)
+      continue
+    }
+
+    // diff to find closest match
+    // TODO this is *really* slow
     for (var j=0; j<scripts2.length; j++) {
       let script2 = scripts2[j]
 
       // stop if the min-bound on the next diff is already worse
+      // nb. this does mean we stop on the first exact match
       let heuristic = Math.abs(script2.count - count)
+      //console.log(best ? best.score : null, heuristic)
       if (best && best.score <= heuristic) {
         break
       }
 
+      //console.log('diff', script1.count, script2.count)
+      //console.log(JSON.stringify(script1))
+      //console.log(JSON.stringify(script2))
       let diff = scriptDiff(script1.blocks, script2.blocks)
+      if (diff.score < heuristic) throw 'min bound fail'
+      //console.log(diff.score)
       if (!best || diff.score < best.score) {
         best = diff
         bestIndex = j
       }
     }
 
-    //console.log(JSON.stringify(best.box(), null, '  '))
     if (best === null) {
       result.push(['-', script1.toJSON()])
     } else {
@@ -78,7 +130,9 @@ function scriptListDiff(json1, json2) {
     }
   }
 
-  result.push(Diff.addAll(scripts2))
+  for (var i=0; i<scripts2.length; i++) {
+    result.push(['+', scripts2[i].toJSON()])
+  }
   return result
 }
 
