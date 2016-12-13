@@ -85,7 +85,7 @@ function scriptListDiff(json1, json2) {
 
     // look for exact match
     for (var j=0; j<scripts2.length; j++) {
-      if (scriptEq(scripts2[j], script1)) {
+      if (scriptEq(scripts2[j], script1) === undefined) {
         best = true
         bestIndex = j
         break
