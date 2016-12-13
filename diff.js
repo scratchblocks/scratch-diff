@@ -3,7 +3,7 @@ const { SequenceMatcher } = require('difflib')
 
 const jsonDiff = require('json-diff').diff
 const { colorize } = require('json-diff/lib/colorize')
-const scriptsDiff = require('./scripts')
+const scriptListDiff = require('./scripts')
 
 
 function arrayDiff(seq1, seq2) {
@@ -54,7 +54,7 @@ function spriteDiff(sprite1, sprite2) {
     name: jsonDiff(sprite1.objName, sprite2.objName),
     costumes: arrayDiff(costumeInfo(sprite1), costumeInfo(sprite2)),
     sounds: arrayDiff(soundInfo(sprite1), soundInfo(sprite2)),
-    scripts: scriptsDiff(sprite1.scripts || [], sprite2.scripts || []),
+    scripts: scriptListDiff(sprite1.scripts || [], sprite2.scripts || []),
     // TODO variables
     // TODO lists
   })
@@ -75,7 +75,7 @@ function simplifyObj(diff) {
 function getSprites(project) {
   // filter watchers
   let sprites = project.children.filter(obj => {
-    return !!obj.objName 
+    return !!obj.objName
   })
   // sort by index in library (which changes much less often than stacking
   // order!)

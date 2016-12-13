@@ -18,7 +18,8 @@ function cleanup(project) {
 
 
 
-glob('corpus/*.kurt.sb2', function(err, files) {
+//glob('corpus/*.kurt.sb2', function(err, files) {
+glob('foo/*.kurt.sb2', function(err, files) {
   if (err) throw err
 
   files.forEach(path => {
@@ -27,7 +28,7 @@ glob('corpus/*.kurt.sb2', function(err, files) {
     var kurt = sb2.Project.load(path).project
     var scratch = sb2.Project.load(path.replace('.kurt.', '.')).project
 
-    let result = projectDiff(kurt, scratch)
+    let result = projectDiff(scratch, kurt)
     process.stdout.write(colorize(result))
 
   })
