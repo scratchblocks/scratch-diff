@@ -48,6 +48,31 @@ function best(options) {
 
 /*******************************************************************************/
 
+function blockWeight(block) {
+  if (!isArray(block)) {
+    return 1
+  }
+
+  var score = 1 // each selector has weight 1.
+  var [_, args, stacks] = blockInfo(block)
+  score += seqWeight(args)
+  if (stacks.length) {
+    score += seqWeight(stacks[0])
+    if (stacks.length > 1) {
+      score += seqWeight(stacks[1])
+    }
+  }
+  return score
+}
+
+function seqWeight(seq) {
+  var score = 0
+  for (var i=0; i<seq.length; i++) {
+    score += blockWeight(seq[i])
+  }
+  return score
+}
+
 function blockInfo(block) {
   let selector = block[0]
   let split
@@ -93,12 +118,10 @@ function stackDiff(stacks1, stacks2) {
   }
   if (stacks1.length > length) {
     out.push(['-', stacks1[i]])
-    // TODO measure length of substacks
-    score += stacks1[i].length * 2
+    score += seqWeight(stacks1[i])
   } else if (stacks2.length > length) {
     out.push(['+', stacks2[i]])
-    // TODO measure length of substacks
-    score += stacks2[i].length * 2
+    score += seqWeight(stacks2[i])
   }
   if (allEqual) {
     return undefined
@@ -164,6 +187,9 @@ function blockDiff(block1, block2) {
   if (diff && diff.selector && (args1.length !== args2.length || stacks1.length !== stacks2.length)) {
     diff = replace(block1, block2)
   }
+
+  // TODO shouldn't these be equal?
+  // console.log(score, Math.abs(blockWeight(block2) - blockWeight(block1)))
 
   return { score, diff }
 }
@@ -240,7 +266,6 @@ function scriptDiff(seq1, seq2) {
   }
   let lin2 = linearize(seq2[0])
   if (lin2) {
-    console.log(lin2)
     options.push(wrap(seq1, lin2, seq2))
   }
 
