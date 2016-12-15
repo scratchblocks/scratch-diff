@@ -7,6 +7,11 @@ function blockDiff(block1, block2) {
     return Diff.equal(block1, block2)
   }
 
+  // don't allow both selector and c-shape to change
+  if (block1.args[0] !== block2.args[0] && block1.stacks.length !== block2.stacks.length) {
+    return Diff.replace(block1, block2)
+  }
+
   let d = Diff.object({
     args: Diff.seq(block1.args, block2.args, blockDiff),
     stacks: Diff.seq(block1.stacks, block2.stacks, (stack1, stack2) => {
@@ -76,7 +81,7 @@ class Solution {
 
 
 function scriptDiff(script1, script2) {
-
+  var max = script1.count + script2.count
   let solutions = []
   solutions.push(new Solution(Diff.EMPTY_LIST, script1, script2))
 
@@ -84,7 +89,10 @@ function scriptDiff(script1, script2) {
     //console.log(solutions)
     let sol = solutions.shift()
     //console.log(sol)
-    //console.log(sol.score)
+
+    if (sol.score > max) {
+      throw 'help'
+    }
 
     if (sol.isDone) {
       return sol.diff
