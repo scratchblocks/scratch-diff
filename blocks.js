@@ -28,17 +28,9 @@ class Block {
       return json // primitive
     }
 
+    // TODO report tosh bug: [] vs [null] inside procDefs
+
     var args = json.slice()
-
-    // TODO is this a tosh bug?
-    if (args[0] === 'procDef') {
-      for (var i=0; i<args.length; i++) {
-        if (args[i] && args[i].length === 1 && args[i][0] === null) {
-          args[i] = []
-        }
-      }
-    }
-
     let stacks = []
     while (isScript(args[args.length - 1])) {
       stacks.push(Script.fromJSON(args.pop()))

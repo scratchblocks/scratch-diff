@@ -1,10 +1,21 @@
 
-let { Block, Script, Diff } = require('./blocks')
+const jsonDiff = require('json-diff').diff
+
+const { Block, Script, Diff } = require('./blocks')
+
 
 
 function blockDiff(block1, block2) {
   if (!(block1 instanceof Block) || !(block2 instanceof Block)) {
     return Diff.equal(block1, block2)
+  }
+
+  // TODO don't allow selector to change.
+
+  if (block1.args[0] === 'procDef' || block2.args[0] === 'procDef') {
+    let diff = jsonDiff(block1, block2)
+    // TODO still complains about unequal empty lists...
+    return new Diff(diff ? 1 : 0, diff)
   }
 
   // don't allow both selector and c-shape to change

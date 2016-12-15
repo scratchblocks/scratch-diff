@@ -27,7 +27,7 @@ glob('ttd/*.changed.sb2', function(err, files) {
     console.log(path)
 
     var kurt = sb2.Project.load(path).project
-    var scratch = sb2.Project.load(path.replace(/[.].*[.]sb2$/, '.sb2')).project
+    var scratch = sb2.Project.load(path.replace(/[.][^.]*[.]sb2$/, '.sb2')).project
 
     let result = projectDiff(scratch, kurt)
     process.stdout.write(colorize(result))
