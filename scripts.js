@@ -15,7 +15,7 @@ function blockDiff(block1, block2) {
   let d = Diff.object({
     args: Diff.seq(block1.args, block2.args, blockDiff),
     stacks: Diff.seq(block1.stacks, block2.stacks, (stack1, stack2) => {
-      return scriptDiff(stack1, stack2)
+      return ScriptDiff.get(stack1, stack2)
     }),
   })
   return d
@@ -79,66 +79,51 @@ class Solution {
   // head2.unwrap ? scriptDiff(script1, head2.unwrap.concat(tail2)) : null,
 }
 
-
-function scriptDiff(script1, script2) {
-  var max = script1.count + script2.count
-  let solutions = []
-  solutions.push(new Solution(Diff.EMPTY_LIST, script1, script2))
-
-  while (solutions.length) {
-    //console.log(solutions)
-    let sol = solutions.shift()
-    //console.log(sol)
-
-    if (sol.score > max) {
-      throw 'help'
-    }
-
-    if (sol.isDone) {
-      return sol.diff
-    }
-
-    if (sol.isTrivial) {
-      solutions.push(sol.triv())
-    } else {
-      solutions.push(sol.step())
-      solutions.push(sol.add())
-      solutions.push(sol.remove())
-    }
-
-    // TODO a real priority queue?
-    solutions.sort((a, b) => {
-      return a.score - b.score
-    })
-  }
-  let head1 = script1.head
-  let tail1 = script1.tail
-  let head2 = script2.head
-  let tail2 = script2.tail
-
-  // greedy diff
-  let first = blockDiff(head1, head2)
-  if (first.score === 0) {
-    return scriptDiff(tail1, tail2).unshift(first)
+class ScriptDiff {
+  constructor(script1, script2) {
+    this.solutions = [
+      new Solution(Diff.EMPTY_LIST, script1, script2)
+    ]
   }
 
-  let options = [
-    [tail1, tail2, d => d.unshift(first)],
-    [script1, tail2, d => d.add(head2)],
-    [tail1, script2, d => d.remove(head1)],
-  ]
+  run(max) {
+    let solutions = this.solutions
+    while (solutions.length) {
+      //console.log(solutions)
+      let sol = solutions.shift()
+      //console.log(sol)
 
-  // TODO options.sort
+      if (sol.score > max) {
+        return [sol.score, null]
+      }
 
-  for (var i=0; i<options.length; i++) {
-    let [s1, s2, ] = options[0]
+      if (sol.isDone) {
+        return [sol.score, sol.diff]
+      }
+
+      if (sol.isTrivial) {
+        solutions.push(sol.triv())
+      } else {
+        solutions.push(sol.step())
+        solutions.push(sol.add())
+        solutions.push(sol.remove())
+      }
+
+      // TODO a real priority queue?
+      solutions.sort((a, b) => {
+        return a.score - b.score
+      })
+    }
+
+    throw 'fail'
   }
 
-  return Diff.best([
-    scriptDiff(tail1, tail2).unshift(first),
-    scriptDiff(script1, tail2).add(head2),
-    scriptDiff(tail1, script2).remove(head1),
-  ])
+  static get(script1, script2) {
+    let differ = new ScriptDiff(script1, script2)
+    let [score, diff] = differ.run(+Infinity)
+    if (diff === null) throw 'oh dear'
+    return diff
+  }
 }
 
 
@@ -198,7 +183,10 @@ function scriptListDiff(json1, json2) {
       console.log('diff', script1.count, script2.count)
       console.log(JSON.stringify(script1))
       console.log(JSON.stringify(script2))
-      let diff = scriptDiff(script1, script2)
+
+      let diff = ScriptDiff.get(script1, script2)
+      //let [score, diff] = differ.run(+Infinity)
+
       if (diff.score < heuristic) throw 'min bound fail'
       console.log(diff.score)
       if (!best || diff.score < best.score) {
