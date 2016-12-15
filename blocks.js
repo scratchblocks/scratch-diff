@@ -52,6 +52,7 @@ class Block {
     }
     for (var i=this.stacks.length; i--; ) {
       count += this.stacks[i].count
+      count += 1 // for else/end
     }
     return count
   }
@@ -73,7 +74,7 @@ class Block {
   }
 
   toJSON() {
-    return this.args.concat(this.stacks)
+    return this.args.map(toJSON).concat(this.stacks.map(toJSON))
   }
 }
 Block.END = Block.fromJSON(['_end_'])
@@ -99,19 +100,19 @@ class Script {
 
   _count() {
     var count = 0
-    //if (this.head) count += this.head.count
-    //if (this.tail) count += this.tail.count
+    if (this.head) count += this.head.count
+    if (this.tail) count += this.tail.count
     return count
   }
 
-  _toJSON(blocks) {
-    if (this.head) blocks.push(this.head)
-    if (this.tail) this.tail._toJSON(blocks)
+  iter(cb) {
+    if (this.head) cb(this.head)
+    if (this.tail) this.tail.iter(cb)
   }
 
   toJSON() {
     let blocks = []
-    this._toJSON(blocks)
+    this.iter(block => blocks.push(block.toJSON()))
     return blocks
   }
 }
@@ -133,7 +134,7 @@ class Diff {
   }
 
   static equal(obj1, obj2) {
-    return obj1 === obj2 ? Diff.EMPTY : Diff.replace(obj1, obj2)
+    return obj1 === obj2 ? Diff.UNDEFINED : Diff.replace(obj1, obj2)
   }
 
   static replace(obj1, obj2) {
@@ -157,7 +158,7 @@ class Diff {
       score += item.score
     }
     if (score === 0) {
-      return Diff.EMPTY
+      return Diff.UNDEFINED
     }
     return new Diff(score, out)
   }
@@ -186,30 +187,28 @@ class Diff {
       out.push(['+', toJSON(item)])
     }
     if (score === 0) {
-      return Diff.EMPTY
+      return Diff.UNDEFINED
     }
     return new Diff(score, out)
   }
 
-  static addAll(seq) {
+  static addAll(script) {
     let out = []
     var score = 0
-    for (var i=0; i<seq.length; i++) {
-      let item = seq[i]
-      score += item.count
-      out.push(['+', toJSON(item)])
-    }
+    script.iter(block => {
+      score += block.count
+      out.push(['+', block.toJSON()])
+    })
     return new Diff(score, out)
   }
 
-  static removeAll(seq) {
+  static removeAll(script) {
     let out = []
     var score = 0
-    for (var i=0; i<seq.length; i++) {
-      let item = seq[i]
-      score += item.count
-      out.push(['-', item])
-    }
+    script.iter(block => {
+      score += block.count
+      out.push(['-', block.toJSON()])
+    })
     return new Diff(score, out)
   }
 
@@ -258,7 +257,8 @@ class Diff {
   }
 
 }
-Diff.EMPTY = new Diff(0, undefined)
+Diff.UNDEFINED = new Diff(0, undefined)
+Diff.EMPTY_LIST = new Diff(0, [])
 
 
 module.exports = {

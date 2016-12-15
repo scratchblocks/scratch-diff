@@ -28,10 +28,81 @@ function scriptEq(script1, script2) {
   return true
 }
 
-function scriptDiff(script1, script2) {
-  if (!script1.length) return Diff.addAll(script2.toJSON())
-  if (!script2.length) return Diff.removeAll(script1.toJSON())
 
+
+class Solution {
+  constructor(diff, script1, script2) {
+    this.diff = diff
+    this.script1 = script1
+    this.script2 = script2
+
+    this.isDone = script1 === Script.EMPTY && script2 === Script.EMPTY
+    this.isTrivial = script1 === Script.EMPTY || script2 === Script.EMPTY
+    // use difference in size as heuristic
+    this.score = diff.score + Math.abs(script1.count - script2.count)
+  }
+
+  triv() {
+    if (this.script1 === Script.EMPTY) {
+      return new Solution(Diff.addAll(this.script2), Script.EMPTY, Script.EMPTY)
+    }
+    if (this.script2 === Script.EMPTY) {
+      return new Solution(Diff.removeAll(this.script1), Script.EMPTY, Script.EMPTY)
+    }
+    throw 'oops'
+  }
+
+  step() {
+    let diff = this.diff, script1 = this.script1, script2 = this.script2
+    let first = blockDiff(script1.head, script2.head)
+    return new Solution(diff.unshift(first), script1.tail, script2.tail)
+  }
+
+  add() {
+    let diff = this.diff, script1 = this.script1, script2 = this.script2
+    return new Solution(diff.add(script2.head), script1, script2.tail)
+  }
+
+  remove() {
+    let diff = this.diff, script1 = this.script1, script2 = this.script2
+    return new Solution(diff.remove(script1.head), script1.tail, script2)
+  }
+
+
+  // TODO wrapping
+  // head1.unwrap ? scriptDiff(head1.unwrap.concat(tail1), script2) : null,
+  // head2.unwrap ? scriptDiff(script1, head2.unwrap.concat(tail2)) : null,
+}
+
+
+function scriptDiff(script1, script2) {
+
+  let solutions = []
+  solutions.push(new Solution(Diff.EMPTY_LIST, script1, script2))
+
+  while (solutions.length) {
+    //console.log(solutions)
+    let sol = solutions.shift()
+    //console.log(sol)
+    //console.log(sol.score)
+
+    if (sol.isDone) {
+      return sol.diff
+    }
+
+    if (sol.isTrivial) {
+      solutions.push(sol.triv())
+    } else {
+      solutions.push(sol.step())
+      solutions.push(sol.add())
+      solutions.push(sol.remove())
+    }
+
+    // TODO a real priority queue?
+    solutions.sort((a, b) => {
+      return a.score - b.score
+    })
+  }
   let head1 = script1.head
   let tail1 = script1.tail
   let head2 = script2.head
@@ -43,15 +114,22 @@ function scriptDiff(script1, script2) {
     return scriptDiff(tail1, tail2).unshift(first)
   }
 
-  // TODO enforce an error limit?
+  let options = [
+    [tail1, tail2, d => d.unshift(first)],
+    [script1, tail2, d => d.add(head2)],
+    [tail1, script2, d => d.remove(head1)],
+  ]
+
+  // TODO options.sort
+
+  for (var i=0; i<options.length; i++) {
+    let [s1, s2, ] = options[0]
+  }
 
   return Diff.best([
     scriptDiff(tail1, tail2).unshift(first),
     scriptDiff(script1, tail2).add(head2),
     scriptDiff(tail1, script2).remove(head1),
-    // TODO wrapping
-    // head1.unwrap ? scriptDiff(head1.unwrap.concat(tail1), script2) : null,
-    // head2.unwrap ? scriptDiff(script1, head2.unwrap.concat(tail2)) : null,
   ])
 }
 
@@ -73,7 +151,7 @@ function scriptListDiff(json1, json2) {
     let script1 = scripts1[i]
     let count = script1.count
 
-    // prioritise by size
+    // prioritise by difference in size
     scripts2.sort((a, b) => {
       let ad = Math.abs(a.count - count)
       let bd = Math.abs(b.count - count)
