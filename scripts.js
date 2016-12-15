@@ -10,7 +10,7 @@ function blockDiff(block1, block2) {
   let d = Diff.object({
     args: Diff.seq(block1.args, block2.args, blockDiff),
     stacks: Diff.seq(block1.stacks, block2.stacks, (stack1, stack2) => {
-      return scriptDiff(stack1.blocks, stack2.blocks)
+      return scriptDiff(stack1, stack2)
     }),
   })
   return d
@@ -29,13 +29,13 @@ function scriptEq(script1, script2) {
 }
 
 function scriptDiff(script1, script2) {
-  if (!script1.length) return Diff.addAll(script2)
-  if (!script2.length) return Diff.removeAll(script1)
+  if (!script1.length) return Diff.addAll(script2.toJSON())
+  if (!script2.length) return Diff.removeAll(script1.toJSON())
 
-  let head1 = script1[0]
-  let tail1 = script1.slice(1)
-  let head2 = script2[0]
-  let tail2 = script2.slice(1)
+  let head1 = script1.head
+  let tail1 = script1.tail
+  let head2 = script2.head
+  let tail2 = script2.tail
 
   // greedy diff
   let first = blockDiff(head1, head2)
@@ -112,7 +112,7 @@ function scriptListDiff(json1, json2) {
       console.log('diff', script1.count, script2.count)
       console.log(JSON.stringify(script1))
       console.log(JSON.stringify(script2))
-      let diff = scriptDiff(script1.blocks, script2.blocks)
+      let diff = scriptDiff(script1, script2)
       if (diff.score < heuristic) throw 'min bound fail'
       console.log(diff.score)
       if (!best || diff.score < best.score) {

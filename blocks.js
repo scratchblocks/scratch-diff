@@ -82,31 +82,40 @@ Block.ELSE = Block.fromJSON(['_else_'])
 
 class Script {
   constructor(blocks) {
-    this.blocks = blocks
+    this.head = blocks[0] || null
+    this.tail = Script.fromJSON(blocks.slice(1))
+    this.length = blocks.length
 
     this.count = this._count()
     if (isNaN(this.count)) throw new Error('bad')
   }
 
   static fromJSON(json) {
-    if (json === null) {
-      return new Script([])
+    if (json === null || json.length === 0) {
+      return Script.EMPTY
     }
     return new Script(json.map(Block.fromJSON))
   }
 
   _count() {
     var count = 0
-    for (var i=this.blocks.length; i--; ) {
-      count += this.blocks[i].count
-    }
+    //if (this.head) count += this.head.count
+    //if (this.tail) count += this.tail.count
     return count
   }
 
+  _toJSON(blocks) {
+    if (this.head) blocks.push(this.head)
+    if (this.tail) this.tail._toJSON(blocks)
+  }
+
   toJSON() {
-    return this.blocks.map(b => b.toJSON())
+    let blocks = []
+    this._toJSON(blocks)
+    return blocks
   }
 }
+Script.EMPTY = new Script([])
 
 
 class Diff {
