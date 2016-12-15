@@ -81,6 +81,8 @@ class Solution {
 
 class ScriptDiff {
   constructor(script1, script2) {
+    this.script1 = script1
+    this.script2 = script2
     this.solutions = [
       new Solution(Diff.EMPTY_LIST, script1, script2)
     ]
@@ -98,7 +100,7 @@ class ScriptDiff {
       }
 
       if (sol.isDone) {
-        return sol
+        return sol.diff
       }
 
       if (sol.isTrivial) {
@@ -120,9 +122,9 @@ class ScriptDiff {
 
   static get(script1, script2) {
     let differ = new ScriptDiff(script1, script2)
-    let sol = differ.run(+Infinity)
-    if (sol === null) throw 'oh dear'
-    return sol.diff
+    let diff = differ.run(+Infinity)
+    if (diff === null) throw 'oh dear'
+    return diff
   }
 }
 
@@ -148,28 +150,30 @@ function scriptListDiff(json1, json2) {
     })
 
     var best = null
-      var out
+    var bestScript = null
     while (options.length) {
       // prioritise by difference in size
       options.sort((a, b) => {
         return a.score - b.score
       })
 
-      let best = options[0]
-      let nextBest = options[1]
+      let first = options[0]
+      let second = options[1]
 
-      out = best.run(nextBest ? nextBest.score : +Infinity)
-      if (out !== null) {
+      diff = first.run(second ? second.score : +Infinity)
+      if (diff !== null) {
+        best = diff
+        bestScript = first.script2
         break
       }
     }
-    best = out.diff
 
+    //console.log(script1, bestScript)
     if (best === null) {
       result.push(['-', script1.toJSON()])
     } else {
       result.push(best.box())
-      let index = scripts2.indexOf(out.script1)
+      let index = scripts2.indexOf(bestScript)
       scripts2.splice(index, 1)
     }
   }
