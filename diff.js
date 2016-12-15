@@ -106,6 +106,7 @@ function spriteListDiff(sprites1, sprites2) {
     }
   })
   unused.forEach(s2 => {
+    // TODO actually match up sprites with same indexInLibrary
     pairs.splice(s2.indexInLibrary, 0, { s1: null, s2 })
   })
 

@@ -113,6 +113,9 @@ class ScriptDiff {
       }
 
       if (sol.isDone) {
+        if (sol.diff.score === 0) {
+          return Diff.UNDEFINED
+        }
         return sol.diff
       }
 
@@ -147,6 +150,7 @@ function scriptListDiff(json1, json2) {
   let scripts2 = json2.map(s => Script.fromJSON(s[2]))
 
   let result = []
+  var allEqual = true
 
   // handle shortest scripts first --quickest to diff
   scripts1.sort((a, b) => {
@@ -183,8 +187,12 @@ function scriptListDiff(json1, json2) {
 
     //console.log(script1, bestScript)
     if (best === null) {
+      allEqual = false
       result.push(['-', script1.toJSON()])
     } else {
+      if (best.score) {
+        allEqual = false
+      }
       result.push(best.box())
       let index = scripts2.indexOf(bestScript)
       scripts2.splice(index, 1)
@@ -193,6 +201,11 @@ function scriptListDiff(json1, json2) {
 
   for (var i=0; i<scripts2.length; i++) {
     result.push(['+', scripts2[i].toJSON()])
+    allEqual = false
+  }
+
+  if (allEqual) {
+    return undefined
   }
   return result
 }
