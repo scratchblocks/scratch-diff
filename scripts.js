@@ -18,6 +18,8 @@ function blockDiff(block1, block2) {
       return ScriptDiff.get(stack1, stack2)
     }),
   })
+
+  if (d.diff) return new Diff(d.score, (d.args || []).concat(d.stacks || []))
   return d
 }
 

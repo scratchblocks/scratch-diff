@@ -29,6 +29,16 @@ class Block {
     }
 
     var args = json.slice()
+
+    // TODO is this a tosh bug?
+    if (args[0] === 'procDef') {
+      for (var i=0; i<args.length; i++) {
+        if (args[i] && args[i].length === 1 && args[i][0] === null) {
+          args[i] = []
+        }
+      }
+    }
+
     let stacks = []
     while (isScript(args[args.length - 1])) {
       stacks.push(Script.fromJSON(args.pop()))
@@ -134,7 +144,10 @@ class Diff {
   }
 
   static equal(obj1, obj2) {
-    return obj1 === obj2 ? Diff.UNDEFINED : Diff.replace(obj1, obj2)
+    return (
+      obj1 === obj2 ||
+      (obj1 && obj1.length === 0 && obj2 && obj2.length === 0)
+    ) ? Diff.UNDEFINED : Diff.replace(obj1, obj2)
   }
 
   static replace(obj1, obj2) {
@@ -154,7 +167,9 @@ class Diff {
     for (var key in obj) {
       let item = obj[key]
       if (!(item instanceof Diff)) throw 'bad'
-      out[key] = item.diff
+      if (item.diff) {
+        out[key] = item.diff
+      }
       score += item.score
     }
     if (score === 0) {
