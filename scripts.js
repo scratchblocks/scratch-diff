@@ -84,21 +84,21 @@ class ScriptDiff {
     this.solutions = [
       new Solution(Diff.EMPTY_LIST, script1, script2)
     ]
+    this.score = Math.abs(script1.count - script2.count)
   }
 
   run(max) {
     let solutions = this.solutions
     while (solutions.length) {
-      //console.log(solutions)
       let sol = solutions.shift()
-      //console.log(sol)
+      this.score = sol.score
 
       if (sol.score > max) {
-        return [sol.score, null]
+        return null
       }
 
       if (sol.isDone) {
-        return [sol.score, sol.diff]
+        return sol
       }
 
       if (sol.isTrivial) {
@@ -120,9 +120,9 @@ class ScriptDiff {
 
   static get(script1, script2) {
     let differ = new ScriptDiff(script1, script2)
-    let [score, diff] = differ.run(+Infinity)
-    if (diff === null) throw 'oh dear'
-    return diff
+    let sol = differ.run(+Infinity)
+    if (sol === null) throw 'oh dear'
+    return sol.diff
   }
 }
 
@@ -142,64 +142,35 @@ function scriptListDiff(json1, json2) {
   // pair scripts
   for (var i=0; i<scripts1.length; i++) {
     let script1 = scripts1[i]
-    let count = script1.count
 
-    // prioritise by difference in size
-    scripts2.sort((a, b) => {
-      let ad = Math.abs(a.count - count)
-      let bd = Math.abs(b.count - count)
-      return ad - bd
+    let options = scripts2.map(script2 => {
+      return new ScriptDiff(script1, script2)
     })
 
-    let best = null
-    let bestIndex = null
+    var best = null
+      var out
+    while (options.length) {
+      // prioritise by difference in size
+      options.sort((a, b) => {
+        return a.score - b.score
+      })
 
-    // look for exact match
-    for (var j=0; j<scripts2.length; j++) {
-      if (scriptEq(scripts2[j], script1) === undefined) {
-        best = true
-        bestIndex = j
+      let best = options[0]
+      let nextBest = options[1]
+
+      out = best.run(nextBest ? nextBest.score : +Infinity)
+      if (out !== null) {
         break
       }
     }
-    if (best) {
-      result.push([' '])
-      scripts2.splice(bestIndex, 1)
-      continue
-    }
-
-    // diff to find closest match
-    // TODO this is *really* slow
-    for (var j=0; j<scripts2.length; j++) {
-      let script2 = scripts2[j]
-
-      // stop if the min-bound on the next diff is already worse
-      // nb. this does mean we stop on the first exact match
-      let heuristic = Math.abs(script2.count - count)
-      if (best && best.score <= heuristic) {
-        break
-      }
-
-      console.log('diff', script1.count, script2.count)
-      console.log(JSON.stringify(script1))
-      console.log(JSON.stringify(script2))
-
-      let diff = ScriptDiff.get(script1, script2)
-      //let [score, diff] = differ.run(+Infinity)
-
-      if (diff.score < heuristic) throw 'min bound fail'
-      console.log(diff.score)
-      if (!best || diff.score < best.score) {
-        best = diff
-        bestIndex = j
-      }
-    }
+    best = out.diff
 
     if (best === null) {
       result.push(['-', script1.toJSON()])
     } else {
       result.push(best.box())
-      scripts2.splice(bestIndex, 1)
+      let index = scripts2.indexOf(out.script1)
+      scripts2.splice(index, 1)
     }
   }
 
