@@ -105,17 +105,16 @@ function scriptListDiff(json1, json2) {
       // stop if the min-bound on the next diff is already worse
       // nb. this does mean we stop on the first exact match
       let heuristic = Math.abs(script2.count - count)
-      //console.log(best ? best.score : null, heuristic)
       if (best && best.score <= heuristic) {
         break
       }
 
-      //console.log('diff', script1.count, script2.count)
-      //console.log(JSON.stringify(script1))
-      //console.log(JSON.stringify(script2))
+      console.log('diff', script1.count, script2.count)
+      console.log(JSON.stringify(script1))
+      console.log(JSON.stringify(script2))
       let diff = scriptDiff(script1.blocks, script2.blocks)
       if (diff.score < heuristic) throw 'min bound fail'
-      //console.log(diff.score)
+      console.log(diff.score)
       if (!best || diff.score < best.score) {
         best = diff
         bestIndex = j
