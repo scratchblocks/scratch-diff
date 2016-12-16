@@ -17,6 +17,7 @@ function blockDiff(block1, block2) {
     return new Diff(diff ? 1 : 0, diff)
   }
 
+  /*
   // check shape...
   let selectorsMatch = (
     block1.args[0] === block2.args[0] &&
@@ -33,25 +34,35 @@ function blockDiff(block1, block2) {
   if (!selectorsMatch || !argsFit) {
     // replace the entire block instead.
     // but if there are stacks, we must unwrap those first.
-    if (haveStacks) {
-      return null
-    }
     return Diff.replace(block1, block2)
   }
+  */
 
   let args = Diff.seq(block1.args, block2.args, blockDiff)
-  // nb. blockDiff can only return null for commands, so args shouldn't have to check for that here
-
   let stacks = Diff.seq(block1.stacks, block2.stacks, (stack1, stack2) => {
     return ScriptDiff.get(stack1, stack2)
   })
 
+  // if same, return undefined
   let score = args.score + stacks.score
   if (score === 0) {
     return Diff.UNDEFINED
   }
 
+  // if all different, do a replace instead.
   let combined = args.diff.concat(stacks.diff)
+  var noneSame = true
+  for (var i=0; i<combined.length; i++) {
+    if (combined[i][0] === ' ') {
+      noneSame = false
+      break
+    }
+  }
+  if (noneSame) {
+    return Diff.replace(block1, block2)
+  }
+
+  // annotate first arg with selector. DEBUG
   if (combined[0][0] === ' ') combined[0] = [' ', block1.args[0]]
   return new Diff(score, combined)
 }
@@ -200,7 +211,6 @@ function scriptListDiff(json1, json2) {
   scripts1.sort((a, b) => {
     return a.count - b.count
   })
-
 
   // pair scripts
   for (var i=0; i<scripts1.length; i++) {

@@ -83,7 +83,7 @@ test('can modify simple argument', () => {
   expect(result.score).toBe(1)
 })
 
-test('can modify arguments in nested repoters (real Scratch script)', () => {
+test('can modify arguments in nested reporters (real Scratch script)', () => {
 
   // these scripts extracted from a Scratch project
   let left = [
