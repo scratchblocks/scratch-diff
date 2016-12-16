@@ -191,7 +191,7 @@ test('can unwrap scripts', () => {
 
   let result = scriptDiff(left, right)
   expect(result.diff).toEqual(diff)
-  expect(result.score).toBe(2)
+  expect(result.score).toBe(1)
 })
 
 test('can unwrap & unwrap & modify scripts', () => {
@@ -224,7 +224,7 @@ test('can unwrap & unwrap & modify scripts', () => {
 
   let result = scriptDiff(left, right)
   expect(result.diff).toEqual(diff)
-  expect(result.score).toBe(3)
+  expect(result.score).toBe(2)
 
   let reverseDiff = [
     [' '], // whenGreenFlag
@@ -238,6 +238,6 @@ test('can unwrap & unwrap & modify scripts', () => {
 
   let result2 = scriptDiff(right, left)
   expect(result2.diff).toEqual(reverseDiff)
-  expect(result2.score).toBe(3)
+  expect(result2.score).toBe(2)
 })
 

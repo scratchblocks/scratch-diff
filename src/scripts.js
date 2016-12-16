@@ -116,12 +116,16 @@ class Solution {
 
   add() {
     let diff = this.diff, script1 = this.script1, script2 = this.script2
-    return new Solution(diff.add(script2.head), script1, script2.tail)
+    let d = diff.add(script2.head)
+    let selector = script2.head.args[0]
+    return new Solution(d, script1, script2.tail)
   }
 
   remove() {
     let diff = this.diff, script1 = this.script1, script2 = this.script2
-    return new Solution(diff.remove(script1.head), script1.tail, script2)
+    let d = diff.remove(script1.head)
+    let selector = script1.head.args[0]
+    return new Solution(d, script1.tail, script2)
   }
 
   unwrap() {

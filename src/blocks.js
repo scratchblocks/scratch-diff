@@ -56,9 +56,11 @@ class Block {
         count += this.args[i].count
       }
     }
+    if (this.args[0] === '_else_' | this.args[0] === '_end_') {
+      count -= 1
+    }
     for (var i=this.stacks.length; i--; ) {
       count += this.stacks[i].count
-      count += 1 // for else/end
     }
     return count
   }
