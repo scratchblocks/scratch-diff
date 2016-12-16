@@ -117,23 +117,14 @@ class Solution {
   unwrap() {
     let diff = this.diff, script1 = this.script1, script2 = this.script2
     let unwrapped = script1.head.unwrap(script1.tail)
-    console.log(diff.remove(unwrapped.head))
-    console.log(unwrapped.tail.toJSON())
-    console.log(script2.toJSON())
     return new Solution(diff.remove(unwrapped.head), unwrapped.tail, script2)
   }
 
-  /*
   wrap() {
-    let linearized2 = this.script2.head.unwrap(this.script2.tail)
-    console.log(linearized2.toJSON())
-    return new Solution(this.diff, this.script1, linearized2)
+    let diff = this.diff, script1 = this.script1, script2 = this.script2
+    let unwrapped = script2.head.unwrap(script2.tail)
+    return new Solution(diff.add(unwrapped.head), script1, unwrapped.tail)
   }
-  */
-
-  // TODO wrapping
-  // head1.unwrap ? scriptDiff(head1.unwrap.concat(tail1), script2) : null,
-  // head2.unwrap ? scriptDiff(script1, head2.unwrap.concat(tail2)) : null,
 }
 
 class ScriptDiff {
@@ -174,10 +165,10 @@ class ScriptDiff {
         solutions.push(sol.remove())
 
         if (sol.script1.head.canUnwrap) {
-          //solutions.push(sol.unwrap())
+          solutions.push(sol.unwrap())
         }
         if (sol.script2.head.canUnwrap) {
-          //solutions.push(sol.wrap())
+          solutions.push(sol.wrap())
         }
       }
 
