@@ -15,6 +15,7 @@ test('can insert into stack', () => {
     ['lookLike:', 'costume1'],
     ['say:forSecs:', "Hello!", 2],
   ])
+
   expect(diff.score).toBe(1)
   expect(diff.diff).toEqual([
     [' '],
@@ -32,6 +33,7 @@ test('can remove from stack', () => {
     ['forward:', 10],
     ['say:forSecs:', "Hello!", 2],
   ])
+
   expect(diff.score).toBe(1)
   expect(diff.diff).toEqual([
     [' '],
@@ -40,19 +42,36 @@ test('can remove from stack', () => {
   ])
 })
 
-test.skip('replaces commands with different selectors', () => {
+test('replaces commands with different selectors', () => {
   let diff = scriptDiff([
     ['forward:', 10],
   ], [
     ['whenGreenFlag'],
   ])
+
   expect(diff.score).toBe(1)
   expect(diff.diff).toEqual([
     ['~', {
       __old: ['forward:', 10],
-      __new: ['+', ['whenGreenFlag', 10]],
+      __new: ['whenGreenFlag'],
     }],
   ])
+})
+
+test('can modify simple argument', () => {
+  let left = [
+    [ "whenKeyPressed", "space" ],
+    [ "forward:", 10 ],
+  ]
+  let right = [
+    [ "whenKeyPressed", "space" ],
+    [ "forward:", 20 ],
+  ]
+  let diff = [["~",[[" ","forward:"],["~",{"__old":10,"__new":20}]]],[" "]]
+
+  let result = scriptDiff(left, right)
+  expect(result.score).toBe(1)
+  expect(result.diff).toEqual(diff)
 })
 
 test('can modify arguments in nested repoters', () => {
@@ -105,115 +124,46 @@ test('can modify arguments in nested repoters', () => {
     ] ]
   ]
 
-  let diff = [
-    [
-      "~",
-      {
-        "args": [
-          [
-            " "
-          ]
-        ],
-        "stacks": [
-          [
-            "~",
-            [
-              [
-                "~",
-                {
-                  "args": [
-                    [
-                      " "
-                    ],
-                    [
-                      "~",
-                      {
-                        "args": [
-                          [
-                            " "
-                          ],
-                          [
-                            "~",
-                            {
-                              "__old": "left arrow",
-                              "__new": "a"
-                            }
-                          ]
-                        ],
-                        "stacks": []
-                      }
-                    ]
-                  ],
-                  "stacks": [
-                    [
-                      " "
-                    ]
-                  ]
-                }
-              ],
-              [
-                "~",
-                {
-                  "args": [
-                    [
-                      " "
-                    ],
-                    [
-                      "~",
-                      {
-                        "args": [
-                          [
-                            " "
-                          ],
-                          [
-                            "~",
-                            {
-                              "__old": "right arrow",
-                              "__new": "d"
-                            }
-                          ]
-                        ],
-                        "stacks": []
-                      }
-                    ]
-                  ],
-                  "stacks": [
-                    [
-                      " "
-                    ]
-                  ]
-                }
-              ],
-              [
-                " "
-              ],
-              [
-                " "
-              ],
-              [
-                " "
-              ],
-              [
-                " "
-              ],
-              [
-                " "
-              ]
-            ]
-          ]
-        ]
-      }
-    ],
-    [ " " ],
-    [ " " ],
-    [ " " ],
-    [ " " ],
-    [ " " ]
-  ]
+  let diff = [ [ "~", [ [ " ", "doForever" ], [ "~", [ [ "~", [ [ " ", "doIf" ], [ "~", [ [ " ", "keyPressed:" ], [ "~", { "__old": "left arrow", "__new": "a" } ] ] ], [ " " ] ] ], [ "~", [ [ " ", "doIf" ], [ "~", [ [ " ", "keyPressed:" ], [ "~", { "__old": "right arrow", "__new": "d" } ] ] ], [ " " ] ] ], [ " " ], [ " " ], [ " " ], [ " " ], [ " " ] ] ] ] ], [ " " ], [ " " ], [ " " ], [ " " ], [ " " ] ]
 
   let result = scriptDiff(left, right)
   expect(result.score).toBe(2)
   expect(result.diff).toEqual(diff)
+})
 
+test.skip('can unwrap scripts', () => {
+  // TODO implement wrapping
+
+  let left = [
+    [ "whenGreenFlag" ],
+    [ "doForever", [
+        [ "forward:", 10 ],
+        [ "nextCostume" ],
+        [ "turnRight:", 15 ]
+      ]
+    ]
+  ]
+
+  let right = [
+    [ "whenGreenFlag" ],
+    [ "forward:", 10 ],
+    [ "nextCostume" ],
+    [ "gotoX:y:", 0, 0 ],
+    [ "turnRight:", 15 ]
+  ]
+
+  let diff = [
+    [' '], // whenGreenFlag
+    ['-', ['doForever', 0, 0]],
+    [' '], // forward:
+    [' '], // nextCostume
+    ['+', ['gotoX:y:', 0, 0 ]],
+    [' '], // turnRight
+    ['-', ['_end_']],
+  ]
+
+  let result = scriptDiff(left, right)
+  expect(result.score).toBe(3)
+  expect(result.diff).toEqual(diff)
 })
 
