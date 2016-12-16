@@ -199,9 +199,6 @@ class Diff {
       }
       out.push(['+', toJSON(item)])
     }
-    if (score === 0) {
-      return Diff.UNDEFINED
-    }
     return new Diff(score, out)
   }
 
