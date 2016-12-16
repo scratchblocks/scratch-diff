@@ -11,39 +11,37 @@ function blockDiff(block1, block2) {
     return Diff.equal(block1, block2)
   }
 
-  // TODO refactor
-
-  var giveup = Diff.replace(block1, block2)
-  if (block1.stacks.length || block2.stacks.length) {
-    giveup = null
-  }
-
-  // arg length must be the same.
-  if (block1.args.length !== block2.args.length) {
-    // but if there are stacks, we must unwrap those first.
-
-    return giveup
-  }
-
-  // don't compare blocks with different selectors.
-  if (block1.args[0] !== block2.args[0]) {
-    return giveup
-  }
-  if (block1.args[0] === 'call') {
-    // must special-case procedure calls
-    if (block1.args[1] !== block2.args[1]) {
-      return giveup
-    }
-  }
-
   // diff define hats separately.
   if (block1.args[0] === 'procDef' || block2.args[0] === 'procDef') {
     let diff = jsonDiff(block1.args, block2.args) // TODO still complains about unequal empty lists...
     return new Diff(diff ? 1 : 0, diff)
   }
 
-  // nb. blockDiff can only return null for commands, so args shouldn't have to check for that here
+  // check shape...
+  let selectorsMatch = (
+    block1.args[0] === block2.args[0] &&
+    !(block1.args[0] === 'call' && block1.args[1] !== block2.args[1])
+  )
+  let argsFit = (
+    block1.args.length === block2.args.length
+  )
+  let haveStacks = !!(
+    block1.stacks.length || block2.stacks.length
+  )
+
+  // cannot change both selector + arg length.
+  if (!selectorsMatch || !argsFit) {
+    // replace the entire block instead.
+    // but if there are stacks, we must unwrap those first.
+    if (haveStacks) {
+      return null
+    }
+    return Diff.replace(block1, block2)
+  }
+
   let args = Diff.seq(block1.args, block2.args, blockDiff)
+  // nb. blockDiff can only return null for commands, so args shouldn't have to check for that here
+
   let stacks = Diff.seq(block1.stacks, block2.stacks, (stack1, stack2) => {
     return ScriptDiff.get(stack1, stack2)
   })
@@ -52,6 +50,7 @@ function blockDiff(block1, block2) {
   if (score === 0) {
     return Diff.UNDEFINED
   }
+
   let combined = args.diff.concat(stacks.diff)
   if (combined[0][0] === ' ') combined[0] = [' ', block1.args[0]]
   return new Diff(score, combined)
