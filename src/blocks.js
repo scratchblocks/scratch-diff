@@ -84,20 +84,26 @@ Block.ELSE = Block.fromJSON(['_else_'])
 
 
 class Script {
-  constructor(blocks) {
-    this.head = blocks[0] || null
-    this.tail = Script.fromJSON(blocks.slice(1))
-    this.length = blocks.length
+  constructor(head, tail) {
+    this.head = head
+    this.tail = tail
+    this.length = tail ? tail.length + 1 : 0
 
     this.count = this._count()
     if (isNaN(this.count)) throw new Error('bad')
   }
 
-  static fromJSON(json) {
-    if (json === null || json.length === 0) {
-      return Script.EMPTY
+  static fromList(blocks) {
+    var s = Script.EMPTY
+    for (var i=blocks.length; i--; ) {
+      s = new Script(blocks[i], s)
     }
-    return new Script(json.map(Block.fromJSON))
+    return s
+  }
+
+  static fromJSON(json) {
+    if (json === null) json = []
+    return Script.fromList(json.map(Block.fromJSON))
   }
 
   _count() {
@@ -118,7 +124,7 @@ class Script {
     return blocks
   }
 }
-Script.EMPTY = new Script([])
+Script.EMPTY = new Script(null, null)
 
 
 class Diff {

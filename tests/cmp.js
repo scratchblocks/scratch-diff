@@ -1,8 +1,8 @@
 
 const glob = require('glob') 
 
-const { projectDiff, colorize } = require('../diff')
-const sb2 = require('../sb2')
+const { projectDiff, colorize } = require('../src/project')
+const sb2 = require('../src/sb2')
 
 
 function cleanup(project) {
