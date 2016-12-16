@@ -69,13 +69,13 @@ class Block {
     var s = new Script(Block.END, base)
 
     s = this.stacks[0].appendOnto(s)
-    s = new Script(this._head, s)
 
     if (this.stacks.length > 1) {
       s = new Script(Block.ELSE, s)
       s = this.stacks[1].appendOnto(s)
     }
 
+    s = new Script(this._head, s)
     return s
   }
 

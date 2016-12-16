@@ -83,8 +83,9 @@ test('can modify simple argument', () => {
   expect(result.score).toBe(1)
 })
 
-test.skip('can modify arguments in nested repoters', () => {
+test('can modify arguments in nested repoters (real Scratch script)', () => {
 
+  // these scripts extracted from a Scratch project
   let left = [
     [ "whenGreenFlag" ],
     [ "gotoX:y:", 0, 0 ],
@@ -133,43 +134,28 @@ test.skip('can modify arguments in nested repoters', () => {
     ] ]
   ]
 
+  // this diff painstakingly written by hand to ensure correctness
   let diff = [
-    [
-        "~",
-        [
-            [ " ", "doForever" ],
-            [ "~", [
-                    [ "~", [
-                            [ " ", "doIf" ],
-                            [ "~", [
-                                    [ " ", "keyPressed:" ],
-                                    [ "~", { "__new": "a", "__old": "left arrow" } ]
-                            ] ],
-                            [ " " ]
-                        ]
-                    ],
-                    [ "~", [
-                            [ " ", "doIf" ],
-                            [ "~", [
-                                    [ " ", "keyPressed:" ],
-                                    [ "~", { "__new": "d", "__old": "right arrow" } ]
-                            ] ],
-                            [ " " ]
-                    ] ],
-                    [ " " ],
-                    [ " " ],
-                    [ " " ],
-                    [ " " ],
-                    [ " " ]
-                ]
-            ]
-        ]
-    ],
-    [ " " ],
-    [ " " ],
-    [ " " ],
-    [ " " ],
-    [ " " ]
+    [' '], // whenGreenFlag
+    [' '], // gotoXY
+    [' '], // heading
+    [' '], // setVar
+    [' '], // setVar
+    ['~', [[' ', 'doForever'], ['~', [
+      [' '], // setVar
+      [' '], // changeVar
+      [' '], // changeX
+      [' '], // changeY
+      [' '], // doIf
+      ['~', [[' ', 'doIf'], ['~', [
+        [' ', 'keyPressed:'],
+        ['~', { __old: 'right arrow', __new: 'd' }],
+      ]], [' ']]],
+      ['~', [[' ', 'doIf'], ['~', [
+        [' ', 'keyPressed:'],
+        ['~', { __old: 'left arrow', __new: 'a' }],
+      ]], [' ']]],
+    ]]]]
   ]
 
   let result = scriptDiff(left, right)

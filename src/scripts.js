@@ -15,7 +15,7 @@ function blockDiff(block1, block2) {
 
   var giveup = Diff.replace(block1, block2)
   if (block1.stacks.length || block2.stacks.length) {
-    return null
+    giveup = null
   }
 
   // arg length must be the same.
@@ -174,7 +174,7 @@ class ScriptDiff {
         solutions.push(sol.remove())
 
         if (sol.script1.head.canUnwrap) {
-          solutions.push(sol.unwrap())
+          //solutions.push(sol.unwrap())
         }
         if (sol.script2.head.canUnwrap) {
           //solutions.push(sol.wrap())
