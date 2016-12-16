@@ -8,20 +8,26 @@ function scriptDiff(a, b) {
 
 test('can insert into stack', () => {
   let diff = scriptDiff([
-    ['forward:', 10],
-    ['say:forSecs:', "Hello!", 2],
+    ['one'],
+    ['two'],
+    ['three'],
+    ['four'],
   ], [
-    ['forward:', 10],
-    ['lookLike:', 'costume1'],
-    ['say:forSecs:', "Hello!", 2],
+    ['one'],
+    ['two'],
+    ['three'],
+    ['SURPRISE!'],
+    ['four'],
   ])
 
-  expect(diff.score).toBe(1)
   expect(diff.diff).toEqual([
-    [' '],
-    ['+', ['lookLike:', 'costume1']],
-    [' '],
+    [' '], // one
+    [' '], // two
+    [' '], // three
+    ['+', ['SURPRISE!']],
+    [' '], // four
   ])
+  expect(diff.score).toBe(1)
 })
 
 test('can remove from stack', () => {
@@ -34,12 +40,12 @@ test('can remove from stack', () => {
     ['say:forSecs:', "Hello!", 2],
   ])
 
-  expect(diff.score).toBe(1)
   expect(diff.diff).toEqual([
     [' '],
     ['-', ['lookLike:', 'costume1']],
     [' '],
   ])
+  expect(diff.score).toBe(1)
 })
 
 test('replaces commands with different selectors', () => {
@@ -49,13 +55,13 @@ test('replaces commands with different selectors', () => {
     ['whenGreenFlag'],
   ])
 
-  expect(diff.score).toBe(1)
   expect(diff.diff).toEqual([
     ['~', {
       __old: ['forward:', 10],
       __new: ['whenGreenFlag'],
     }],
   ])
+  expect(diff.score).toBe(1)
 })
 
 test('can modify simple argument', () => {
@@ -67,14 +73,17 @@ test('can modify simple argument', () => {
     [ "whenKeyPressed", "space" ],
     [ "forward:", 20 ],
   ]
-  let diff = [["~",[[" ","forward:"],["~",{"__old":10,"__new":20}]]],[" "]]
+  let diff = [
+    [' '],
+    ["~", [[" ","forward:"], ["~",{"__old":10,"__new":20}]]],
+  ]
 
   let result = scriptDiff(left, right)
-  expect(result.score).toBe(1)
   expect(result.diff).toEqual(diff)
+  expect(result.score).toBe(1)
 })
 
-test('can modify arguments in nested repoters', () => {
+test.skip('can modify arguments in nested repoters', () => {
 
   let left = [
     [ "whenGreenFlag" ],
@@ -124,24 +133,89 @@ test('can modify arguments in nested repoters', () => {
     ] ]
   ]
 
-  let diff = [ [ "~", [ [ " ", "doForever" ], [ "~", [ [ "~", [ [ " ", "doIf" ], [ "~", [ [ " ", "keyPressed:" ], [ "~", { "__old": "left arrow", "__new": "a" } ] ] ], [ " " ] ] ], [ "~", [ [ " ", "doIf" ], [ "~", [ [ " ", "keyPressed:" ], [ "~", { "__old": "right arrow", "__new": "d" } ] ] ], [ " " ] ] ], [ " " ], [ " " ], [ " " ], [ " " ], [ " " ] ] ] ] ], [ " " ], [ " " ], [ " " ], [ " " ], [ " " ] ]
+  let diff = [
+    [
+        "~",
+        [
+            [ " ", "doForever" ],
+            [ "~", [
+                    [ "~", [
+                            [ " ", "doIf" ],
+                            [ "~", [
+                                    [ " ", "keyPressed:" ],
+                                    [ "~", { "__new": "a", "__old": "left arrow" } ]
+                            ] ],
+                            [ " " ]
+                        ]
+                    ],
+                    [ "~", [
+                            [ " ", "doIf" ],
+                            [ "~", [
+                                    [ " ", "keyPressed:" ],
+                                    [ "~", { "__new": "d", "__old": "right arrow" } ]
+                            ] ],
+                            [ " " ]
+                    ] ],
+                    [ " " ],
+                    [ " " ],
+                    [ " " ],
+                    [ " " ],
+                    [ " " ]
+                ]
+            ]
+        ]
+    ],
+    [ " " ],
+    [ " " ],
+    [ " " ],
+    [ " " ],
+    [ " " ]
+  ]
 
   let result = scriptDiff(left, right)
-  expect(result.score).toBe(2)
   expect(result.diff).toEqual(diff)
+  expect(result.score).toBe(2)
 })
 
-test.skip('can unwrap scripts', () => {
-  // TODO implement wrapping
+test('can unwrap scripts', () => {
+  let left = [
+    [ "whenGreenFlag" ],
+    [ "doRepeat", 10, [
+      [ "forward:", 10 ],
+      [ "turnRight:", 15 ],
+    ] ],
+    [ "nextCostume" ],
+  ]
 
+  let right = [
+    [ "whenGreenFlag" ],
+    [ "forward:", 10 ],
+    [ "turnRight:", 15 ],
+    [ "nextCostume" ],
+  ]
+
+  let diff = [
+    [' '], // whenGreenFlag
+    ['-', ['doRepeat', 10]],
+    [' '], // forward:
+    [' '], // turnRight
+    ['-', ['_end_']],
+    [' '], // nextCostume
+  ]
+
+  let result = scriptDiff(left, right)
+  expect(result.diff).toEqual(diff)
+  expect(result.score).toBe(2)
+})
+
+test.skip('can unwrap & modify scripts', () => {
   let left = [
     [ "whenGreenFlag" ],
     [ "doForever", [
-        [ "forward:", 10 ],
-        [ "nextCostume" ],
-        [ "turnRight:", 15 ]
-      ]
-    ]
+      [ "forward:", 10 ],
+      [ "nextCostume" ],
+      [ "turnRight:", 15 ],
+    ] ]
   ]
 
   let right = [
@@ -149,12 +223,12 @@ test.skip('can unwrap scripts', () => {
     [ "forward:", 10 ],
     [ "nextCostume" ],
     [ "gotoX:y:", 0, 0 ],
-    [ "turnRight:", 15 ]
+    [ "turnRight:", 15 ],
   ]
 
   let diff = [
     [' '], // whenGreenFlag
-    ['-', ['doForever', 0, 0]],
+    ['-', ['doForever']],
     [' '], // forward:
     [' '], // nextCostume
     ['+', ['gotoX:y:', 0, 0 ]],
@@ -163,7 +237,7 @@ test.skip('can unwrap scripts', () => {
   ]
 
   let result = scriptDiff(left, right)
-  expect(result.score).toBe(3)
   expect(result.diff).toEqual(diff)
+  expect(result.score).toBe(3)
 })
 

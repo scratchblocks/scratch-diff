@@ -18,9 +18,13 @@ class Block {
     this.args = args
     this.stacks = stacks
 
+    this.canUnwrap = this.stacks.length
+    if (this.canUnwrap) {
+      this._head = new Block(args, [])
+    }
+
     this.count = this._count()
     if (isNaN(this.count)) throw new Error('bad')
-    this.unwrap = this._unwrap()
   }
 
   static fromJSON(json) {
@@ -59,32 +63,31 @@ class Block {
     return count
   }
 
-  _unwrap() {
-    if (!this.stacks.length) return null
+  unwrap(base) {
+    if (!this.canUnwrap) throw new Error('no stacks')
 
-    let head = new Block(this.args, [])
-    let out = []
+    var s = new Script(Block.END, base)
 
-    out.push(head)
-    out = out.concat(this.stacks[0])
+    s = this.stacks[0].appendOnto(s)
+    s = new Script(this._head, s)
+
     if (this.stacks.length > 1) {
-      out.push(Block.ELSE)
-      out = out.concat(this.stacks[0])
+      s = new Script(Block.ELSE, s)
+      s = this.stacks[1].appendOnto(s)
     }
-    out.push(Block.END)
-    return out
+
+    return s
   }
 
   toJSON() {
     return this.args.map(toJSON).concat(this.stacks.map(toJSON))
   }
 }
-Block.END = Block.fromJSON(['_end_'])
-Block.ELSE = Block.fromJSON(['_else_'])
 
 
 class Script {
   constructor(head, tail) {
+    if (head !== null && !(head instanceof Block)) throw new Error('not a block')
     this.head = head
     this.tail = tail
     this.length = tail ? tail.length + 1 : 0
@@ -118,12 +121,29 @@ class Script {
     if (this.tail) this.tail.iter(cb)
   }
 
+  reverseIter(cb) {
+    if (this.tail) this.tail.reverseIter(cb)
+    if (this.head) cb(this.head)
+  }
+
   toJSON() {
     let blocks = []
     this.iter(block => blocks.push(block.toJSON()))
     return blocks
   }
+
+  appendOnto(other) {
+    var s = other
+    this.reverseIter(block => {
+      s = new Script(block, s)
+    })
+    return s
+  }
 }
+
+Block.END = Block.fromJSON(['_end_'])
+Block.ELSE = Block.fromJSON(['_else_'])
+
 Script.EMPTY = new Script(null, null)
 
 
@@ -202,9 +222,10 @@ class Diff {
     return new Diff(score, out)
   }
 
-  static addAll(script) {
-    let out = []
-    var score = 0
+  addAll(script) {
+    if (this.diff.constructor !== Array) throw 'must be array diff'
+    let out = this.diff.slice()
+    var score = this.score
     script.iter(block => {
       score += block.count
       out.push(['+', block.toJSON()])
@@ -212,9 +233,10 @@ class Diff {
     return new Diff(score, out)
   }
 
-  static removeAll(script) {
-    let out = []
-    var score = 0
+  removeAll(script) {
+    if (this.diff.constructor !== Array) throw 'must be array diff'
+    let out = this.diff.slice()
+    var score = this.score
     script.iter(block => {
       score += block.count
       out.push(['-', block.toJSON()])
@@ -222,15 +244,15 @@ class Diff {
     return new Diff(score, out)
   }
 
-  unshift(other) {
+  push(other) {
     if (!(other instanceof Diff)) throw new Error('not a diff')
     if (this.diff.constructor !== Array) throw 'must be array diff'
     let score = this.score + other.score
     let diff = this.diff.slice()
     if (other.diff === undefined) {
-      diff.unshift([' '])
+      diff.push([' '])
     } else {
-      diff.unshift(['~', other.diff])
+      diff.push(['~', other.diff])
     }
     return new Diff(score, diff)
   }
@@ -240,7 +262,7 @@ class Diff {
     if (this.diff.constructor !== Array) throw 'must be array diff'
     let score = this.score + item.count
     let diff = this.diff.slice()
-    diff.unshift(['+', toJSON(item)])
+    diff.push(['+', toJSON(item)])
     return new Diff(score, diff)
   }
 
@@ -249,7 +271,7 @@ class Diff {
     if (this.diff.constructor !== Array) throw 'must be array diff'
     let score = this.score + item.count
     let diff = this.diff.slice()
-    diff.unshift(['-', toJSON(item)])
+    diff.push(['-', toJSON(item)])
     return new Diff(score, diff)
   }
 

@@ -24,20 +24,22 @@ glob('foo/*.changed.sb2', function(err, files) {
   if (err) throw err
 
   files.forEach(path => {
-    //console.log(path)
+    console.log(path)
 
     var kurt = sb2.Project.load(path).project
     var scratch = sb2.Project.load(path.replace(/[.][^.]*[.]sb2$/, '.sb2')).project
 
     let result = projectDiff(scratch, kurt)
 
+    /*
     console.log('//', path.split('.')[0])
     console.log('let left =', JSON.stringify(scratch.children[0].scripts, null, '  '))
     console.log('let right =', JSON.stringify(kurt.children[0].scripts, null, '  '))
     console.log('let diff =', JSON.stringify(result[1][1].scripts, ' '))
     console.log()
 
-    //process.stdout.write(colorize(result))
+    */
+    process.stdout.write(colorize(result))
 
   })
 })

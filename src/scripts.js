@@ -11,19 +11,28 @@ function blockDiff(block1, block2) {
     return Diff.equal(block1, block2)
   }
 
+  // TODO refactor
+
+  var giveup = Diff.replace(block1, block2)
+  if (block1.stacks.length || block2.stacks.length) {
+    return null
+  }
+
   // arg length must be the same.
   if (block1.args.length !== block2.args.length) {
-    return Diff.replace(block1, block2)
+    // but if there are stacks, we must unwrap those first.
+
+    return giveup
   }
 
   // don't compare blocks with different selectors.
   if (block1.args[0] !== block2.args[0]) {
-    return Diff.replace(block1, block2)
+    return giveup
   }
   if (block1.args[0] === 'call') {
     // must special-case procedure calls
     if (block1.args[1] !== block2.args[1]) {
-      return Diff.replace(block1, block2)
+      return giveup
     }
   }
 
@@ -33,6 +42,7 @@ function blockDiff(block1, block2) {
     return new Diff(diff ? 1 : 0, diff)
   }
 
+  // nb. blockDiff can only return null for commands, so args shouldn't have to check for that here
   let args = Diff.seq(block1.args, block2.args, blockDiff)
   let stacks = Diff.seq(block1.stacks, block2.stacks, (stack1, stack2) => {
     return ScriptDiff.get(stack1, stack2)
@@ -74,11 +84,12 @@ class Solution {
   }
 
   triv() {
-    if (this.script1 === Script.EMPTY) {
-      return new Solution(Diff.addAll(this.script2), Script.EMPTY, Script.EMPTY)
+    let diff = this.diff, script1 = this.script1, script2 = this.script2
+    if (script1 === Script.EMPTY) {
+      return new Solution(diff.addAll(this.script2), Script.EMPTY, Script.EMPTY)
     }
-    if (this.script2 === Script.EMPTY) {
-      return new Solution(Diff.removeAll(this.script1), Script.EMPTY, Script.EMPTY)
+    if (script2 === Script.EMPTY) {
+      return new Solution(diff.removeAll(this.script1), Script.EMPTY, Script.EMPTY)
     }
     throw 'oops'
   }
@@ -86,7 +97,11 @@ class Solution {
   step() {
     let diff = this.diff, script1 = this.script1, script2 = this.script2
     let first = blockDiff(script1.head, script2.head)
-    return new Solution(diff.unshift(first), script1.tail, script2.tail)
+    if (!first) {
+      // some blocks (different arg&stack len) are incompatible and may not be diffed.
+      return
+    }
+    return new Solution(diff.push(first), script1.tail, script2.tail)
   }
 
   add() {
@@ -99,6 +114,22 @@ class Solution {
     return new Solution(diff.remove(script1.head), script1.tail, script2)
   }
 
+  unwrap() {
+    let diff = this.diff, script1 = this.script1, script2 = this.script2
+    let unwrapped = script1.head.unwrap(script1.tail)
+    console.log(diff.remove(unwrapped.head))
+    console.log(unwrapped.tail.toJSON())
+    console.log(script2.toJSON())
+    return new Solution(diff.remove(unwrapped.head), unwrapped.tail, script2)
+  }
+
+  /*
+  wrap() {
+    let linearized2 = this.script2.head.unwrap(this.script2.tail)
+    console.log(linearized2.toJSON())
+    return new Solution(this.diff, this.script1, linearized2)
+  }
+  */
 
   // TODO wrapping
   // head1.unwrap ? scriptDiff(head1.unwrap.concat(tail1), script2) : null,
@@ -135,9 +166,19 @@ class ScriptDiff {
       if (sol.isTrivial) {
         solutions.push(sol.triv())
       } else {
-        solutions.push(sol.step())
+        let stepped = sol.step()
+        if (stepped) {
+          solutions.push(stepped)
+        }
         solutions.push(sol.add())
         solutions.push(sol.remove())
+
+        if (sol.script1.head.canUnwrap) {
+          solutions.push(sol.unwrap())
+        }
+        if (sol.script2.head.canUnwrap) {
+          //solutions.push(sol.wrap())
+        }
       }
 
       // TODO a real priority queue?
