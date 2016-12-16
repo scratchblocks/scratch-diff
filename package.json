@@ -15,7 +15,10 @@
     "json-diff": "^0.3.1",
     "node-zip": "^1.1.1"
   },
+  "devDependencies": {
+    "jest": "^18.0.0"
+  },
   "scripts": {
-    "test": "node test/cmp.js"
+    "test": "jest"
   }
 }

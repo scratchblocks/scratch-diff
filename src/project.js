@@ -3,7 +3,7 @@ const { SequenceMatcher } = require('difflib')
 
 const jsonDiff = require('json-diff').diff
 const { colorize } = require('json-diff/lib/colorize')
-const scriptListDiff = require('./scripts')
+const { scriptListDiff } = require('./scripts')
 
 
 function arrayDiff(seq1, seq2) {

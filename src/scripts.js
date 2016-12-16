@@ -23,6 +23,7 @@ function blockDiff(block1, block2) {
     return Diff.replace(block1, block2)
   }
 
+  // TODO rewrite seq to be more useful
   let d = Diff.object({
     args: Diff.seq(block1.args, block2.args, blockDiff),
     stacks: Diff.seq(block1.stacks, block2.stacks, (stack1, stack2) => {
@@ -211,5 +212,8 @@ function scriptListDiff(json1, json2) {
 }
 
 
-module.exports = scriptListDiff
+module.exports = {
+  scriptListDiff,
+  ScriptDiff,
+}
 
