@@ -223,8 +223,8 @@ class Diff {
   }
 
   unshift(other) {
-    if (!(other instanceof Diff)) throw new Error('bad')
-    if (this.diff.constructor !== Array) throw 'bad'
+    if (!(other instanceof Diff)) throw new Error('not a diff')
+    if (this.diff.constructor !== Array) throw 'must be array diff'
     let score = this.score + other.score
     let diff = this.diff.slice()
     if (other.diff === undefined) {
@@ -237,7 +237,7 @@ class Diff {
 
   add(item) {
     if (item instanceof Diff) throw 'bad'
-    if (this.diff.constructor !== Array) throw 'bad'
+    if (this.diff.constructor !== Array) throw 'must be array diff'
     let score = this.score + item.count
     let diff = this.diff.slice()
     diff.unshift(['+', toJSON(item)])
@@ -246,7 +246,7 @@ class Diff {
 
   remove(item) {
     if (item instanceof Diff) throw 'bad'
-    if (this.diff.constructor !== Array) throw 'bad'
+    if (this.diff.constructor !== Array) throw 'must be array diff'
     let score = this.score + item.count
     let diff = this.diff.slice()
     diff.unshift(['-', toJSON(item)])

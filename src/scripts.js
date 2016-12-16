@@ -6,33 +6,45 @@ const { Block, Script, Diff } = require('./blocks')
 
 
 function blockDiff(block1, block2) {
+  // diff primitives by identity.
   if (!(block1 instanceof Block) || !(block2 instanceof Block)) {
     return Diff.equal(block1, block2)
   }
 
-  // TODO don't allow selector to change.
-
-  if (block1.args[0] === 'procDef' || block2.args[0] === 'procDef') {
-    let diff = jsonDiff(block1, block2)
-    // TODO still complains about unequal empty lists...
-    return new Diff(diff ? 1 : 0, diff)
-  }
-
-  // don't allow both selector and c-shape to change
-  if (block1.args[0] !== block2.args[0] && block1.stacks.length !== block2.stacks.length) {
+  // arg length must be the same.
+  if (block1.args.length !== block2.args.length) {
     return Diff.replace(block1, block2)
   }
 
-  // TODO rewrite seq to be more useful
-  let d = Diff.object({
-    args: Diff.seq(block1.args, block2.args, blockDiff),
-    stacks: Diff.seq(block1.stacks, block2.stacks, (stack1, stack2) => {
-      return ScriptDiff.get(stack1, stack2)
-    }),
+  // don't compare blocks with different selectors.
+  if (block1.args[0] !== block2.args[0]) {
+    return Diff.replace(block1, block2)
+  }
+  if (block1.args[0] === 'call') {
+    // must special-case procedure calls
+    if (block1.args[1] !== block2.args[1]) {
+      return Diff.replace(block1, block2)
+    }
+  }
+
+  // diff define hats separately.
+  if (block1.args[0] === 'procDef' || block2.args[0] === 'procDef') {
+    let diff = jsonDiff(block1.args, block2.args) // TODO still complains about unequal empty lists...
+    return new Diff(diff ? 1 : 0, diff)
+  }
+
+  let args = Diff.seq(block1.args, block2.args, blockDiff)
+  let stacks = Diff.seq(block1.stacks, block2.stacks, (stack1, stack2) => {
+    return ScriptDiff.get(stack1, stack2)
   })
 
-  //if (d.diff) return new Diff(d.score, (d.args || []).concat(d.stacks || []))
-  return d
+  let score = args.score + stacks.score
+  if (score === 0) {
+    return Diff.UNDEFINED
+  }
+  let combined = args.diff.concat(stacks.diff)
+  if (combined[0][0] === ' ') combined[0] = [' ', block1.args[0]]
+  return new Diff(score, combined)
 }
 
 function scriptEq(script1, script2) {
