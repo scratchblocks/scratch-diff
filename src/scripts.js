@@ -13,6 +13,9 @@ function blockDiff(block1, block2) {
 
   // diff define hats separately.
   if (block1.args[0] === 'procDef' || block2.args[0] === 'procDef') {
+    if (!(block1.args[0] === 'procDef' && block2.args[0] === 'procDef')) {
+      return Diff.replace(block1, block2)
+    }
     let diff = jsonDiff(block1.args, block2.args) // TODO still complains about unequal empty lists...
     return new Diff(diff ? 1 : 0, diff)
   }
@@ -271,7 +274,8 @@ function scriptListDiff(json1, json2) {
 
 
 module.exports = {
-  scriptListDiff,
+  blockDiff,
   ScriptDiff,
+  scriptListDiff,
 }
 
