@@ -238,7 +238,7 @@ function scriptListDiff(json1, json2) {
       let first = options[0]
       let second = options[1]
 
-      diff = first.run(second ? second.score : +Infinity)
+      let diff = first.run(second ? second.score : +Infinity)
       if (diff !== null) {
         best = diff
         bestScript = first.script2

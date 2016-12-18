@@ -1,8 +1,7 @@
 
 const glob = require('glob') 
 
-const { projectDiff, colorize } = require('../src/project')
-const sb2 = require('../src/sb2')
+const { Project, diff, colorize } = require('../index.js')
 
 
 function cleanup(project) {
@@ -26,10 +25,10 @@ glob('ttd/*.changed.sb2', function(err, files) {
   files.forEach(path => {
     console.log(path)
 
-    var kurt = sb2.Project.load(path).project
-    var scratch = sb2.Project.load(path.replace(/[.][^.]*[.]sb2$/, '.sb2')).project
+    var kurt = Project.load(path).project
+    var scratch = Project.load(path.replace(/[.][^.]*[.]sb2$/, '.sb2')).project
 
-    let result = projectDiff(scratch, kurt)
+    let result = diff(scratch, kurt)
 
     /*
     console.log('//', path.split('.')[0])

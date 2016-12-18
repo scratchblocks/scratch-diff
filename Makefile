@@ -1,13 +1,12 @@
 
 all:
-	echo 1
+	echo "Hi!"
 
 test: node_modules
-	yarn test
+	npm run test
 
 node_modules:
-	yarn
+	npm install
 
 .PHONY: all test
-
 
