@@ -241,3 +241,101 @@ test('can unwrap & unwrap & modify scripts', () => {
   expect(result2.score).toBe(2)
 })
 
+test('can add else to `if _ then`', () => {
+  let left = [
+    [ "whenGreenFlag" ],
+    [ "doIf", false, [
+      ['true part'],
+    ] ],
+    ['stopAll'],
+  ]
+
+  let right = [
+    [ "whenGreenFlag" ],
+    [ "doIf", false, [
+      ['true part'],
+    ], [
+      ['false part'],
+    ] ],
+    ['stopAll'],
+  ]
+
+  let diff = [
+    [' '], // whenGreenFlag
+    ['~', [
+      [' ', 'doIf'],
+      [' '], // false
+      [' '], // true part
+      ['+', [
+        ['false part']
+      ],
+    ]]],
+    [' '] // stopAll
+  ]
+
+  let result = scriptDiff(left, right)
+  expect(result.diff).toEqual(diff)
+  expect(result.score).toBe(2) // '_else_' + 'false part'
+
+  let reverseDiff = [
+    [' '], // whenGreenFlag
+    ['~', [
+      [' ', 'doIf'],
+      [' '], // false
+      [' '], // true part
+      ['-', [
+        ['false part']
+      ],
+    ]]],
+    [' '] // stopAll
+  ]
+
+  let result2 = scriptDiff(right, left)
+  expect(result2.diff).toEqual(reverseDiff)
+  expect(result2.score).toBe(2)
+
+})
+
+// TODO is this even desirable?!
+test.skip('can move blocks inside loop', () => {
+  let left = [
+    [ "whenGreenFlag" ],
+    [ "doForever", [
+      ['one'],
+      ['two'],
+    ]],
+    ['three'],
+    ['four'],
+    ['five'],
+  ]
+
+  let right = [
+    [ "whenGreenFlag" ],
+    [ "doForever", [
+      ['one'],
+      ['two'],
+      ['three'],
+      ['four'],
+    ]],
+    ['five'],
+  ]
+
+  let diff = [
+    [' '], // whenGreenFlag
+    ['~', [
+      [' ', 'doIf'],
+      [' '], // false
+      [' '], // true part
+      ['+', [
+        ['false part']
+      ],
+    ]]],
+    [' '] // stopAll
+  ]
+
+  let result = scriptDiff(left, right)
+  expect(result.diff).toEqual(diff)
+  expect(result.score).toBe(2)
+
+})
+

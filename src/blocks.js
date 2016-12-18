@@ -35,9 +35,15 @@ class Block {
     // TODO report tosh bug: [] vs [null] inside procDefs
 
     var args = json.slice()
+
+    // allow detecting adding an `else` part.
+    if (args[0] === 'doIfElse') {
+      args[0] = 'doIf'
+    }
+
     let stacks = []
     while (isScript(args[args.length - 1])) {
-      stacks.push(Script.fromJSON(args.pop()))
+      stacks.unshift(Script.fromJSON(args.pop()))
     }
     if (stacks.length > 2) {
       console.error(json)
@@ -51,17 +57,27 @@ class Block {
 
   _count() {
     var count = 1
+
+    // don't count end
+    if (this.args[0] === '_end_') {
+      count -= 1
+    }
+
+    // count args & stacks
     for (var i=this.args.length; i--; ) {
       if (this.args[i].constructor === Block) {
         count += this.args[i].count
       }
     }
-    if (this.args[0] === '_else_' | this.args[0] === '_end_') {
-      count -= 1
-    }
     for (var i=this.stacks.length; i--; ) {
       count += this.stacks[i].count
     }
+
+    // count else
+    if (this.stacks.length === 2) {
+      count += 1
+    }
+
     return count
   }
 
@@ -70,12 +86,12 @@ class Block {
 
     var s = new Script(Block.END, base)
 
-    s = this.stacks[0].appendOnto(s)
-
     if (this.stacks.length > 1) {
-      s = new Script(Block.ELSE, s)
       s = this.stacks[1].appendOnto(s)
+      s = new Script(Block.ELSE, s)
     }
+
+    s = this.stacks[0].appendOnto(s)
 
     s = new Script(this._head, s)
     return s

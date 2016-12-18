@@ -243,7 +243,8 @@ function scriptListDiff(json1, json2) {
       }
     }
 
-    //console.log(script1, bestScript)
+    // TODO limit score -- dont want to match up completely different scripts!
+
     if (best === null) {
       allEqual = false
       result.push(['-', script1.toJSON()])
